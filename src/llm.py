@@ -78,42 +78,48 @@ class LLM:
         client: Optional[Any] = None,
         config: Optional[Config] = None,
     ) -> None:
+        
         cfg = config or settings
 
-try:
-    api_key = st.secrets.get("OLLAMA_API_KEY", "")
-    cloud_model = st.secrets.get(
-        "CODESAGE_OLLAMA_MODEL", "gemma4:31b"
-    )
-except Exception:
-    api_key = os.getenv("OLLAMA_API_KEY", "")
-    cloud_model = os.getenv(
-        "CODESAGE_OLLAMA_MODEL", "gemma4:31b"
-    )
+        try:
+            api_key = st.secrets.get("OLLAMA_API_KEY", "")
+            cloud_model = st.secrets.get(
+                "CODESAGE_OLLAMA_MODEL", "gemma4:31b"
+            )
+        except Exception:
+            api_key = os.getenv("OLLAMA_API_KEY", "")
+            cloud_model = os.getenv(
+                "CODESAGE_OLLAMA_MODEL", "gemma4:31b"
+            )
 
-self.api_key = str(api_key).strip()
-self.model = (
-    str(model) if model is not None
-    else str(cloud_model) if self.api_key
-    else cfg.ollama_model
-)
-self.host = (
-    str(host) if host is not None
-    else "https://ollama.com" if self.api_key
-    else cfg.ollama_host
-)
-self._client = client
+        self.api_key = str(api_key).strip()
+        self.model = (
+            str(model) if model is not None
+            else str(cloud_model) if self.api_key
+            else cfg.ollama_model
+        )
+        self.host = (
+            str(host) if host is not None
+            else "https://ollama.com" if self.api_key
+            else cfg.ollama_host
+        )
+        self._client = client
 
+  
     @property
     def client(self) -> Any:
-        """Return the underlying Ollama client, creating one on first access."""
+        """Return the configured Ollama client."""
         if self._client is None:
-            self._client = ollama.Client(host=self.host)
+            if self.api_key:
+                self._client = ollama.Client(
+                    host=self.host,
+                    headers={
+                        "Authorization": f"Bearer {self.api_key}"
+                    },
+                )
+            else:
+                self._client = ollama.Client(host=self.host)
         return self._client
-
-    @client.setter
-    def client(self, value: Any) -> None:
-        self._client = value
 
     def generate(
         self,
