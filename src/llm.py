@@ -24,9 +24,7 @@ from __future__ import annotations
 from collections.abc import Mapping
 from typing import Any, Optional
 
-import os
 import ollama
-import streamlit as st
 
 from config import Config, settings
 from src.utils import get_logger
@@ -78,48 +76,21 @@ class LLM:
         client: Optional[Any] = None,
         config: Optional[Config] = None,
     ) -> None:
-        
         cfg = config or settings
+        self.model: str = str(model) if model is not None else cfg.ollama_model
+        self.host: str = str(host) if host is not None else cfg.ollama_host
+        self._client: Optional[Any] = client
 
-        try:
-            api_key = st.secrets.get("OLLAMA_API_KEY", "")
-            cloud_model = st.secrets.get(
-                "CODESAGE_OLLAMA_MODEL", "gemma4:31b"
-            )
-        except Exception:
-            api_key = os.getenv("OLLAMA_API_KEY", "")
-            cloud_model = os.getenv(
-                "CODESAGE_OLLAMA_MODEL", "gemma4:31b"
-            )
-
-        self.api_key = str(api_key).strip()
-        self.model = (
-            str(model) if model is not None
-            else str(cloud_model) if self.api_key
-            else cfg.ollama_model
-        )
-        self.host = (
-            str(host) if host is not None
-            else "https://ollama.com" if self.api_key
-            else cfg.ollama_host
-        )
-        self._client = client
-
-  
     @property
     def client(self) -> Any:
-        """Return the configured Ollama client."""
+        """Return the underlying Ollama client, creating one on first access."""
         if self._client is None:
-            if self.api_key:
-                self._client = ollama.Client(
-                    host=self.host,
-                    headers={
-                        "Authorization": f"Bearer {self.api_key}"
-                    },
-                )
-            else:
-                self._client = ollama.Client(host=self.host)
+            self._client = ollama.Client(host=self.host)
         return self._client
+
+    @client.setter
+    def client(self, value: Any) -> None:
+        self._client = value
 
     def generate(
         self,
