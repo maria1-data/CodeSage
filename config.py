@@ -50,7 +50,7 @@ class Config:
     ollama_model: str = field(
         default_factory=lambda: os.getenv(
             "CODESAGE_OLLAMA_MODEL",
-            os.getenv("OLLAMA_MODEL", "qwen2.5:3b")
+            os.getenv("OLLAMA_MODEL", "llama3.2:3b")
         )
     )
 
