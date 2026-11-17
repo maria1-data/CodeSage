@@ -1,8 +1,10 @@
-"""Centralised configuration for CodeSage.
 
-Values come from environment variables (optionally loaded from a ``.env``
-file) with sensible defaults. All paths are relative to the project root and
-built with :mod:`pathlib`, so they work on Windows and Linux.
+"""
+Configuration for CodeSage.
+
+Values come from environment variables (optionally loaded from a .env
+file) with sensible defaults. All paths are relative to the project root
+and built with pathlib, so they work on Windows and Linux.
 """
 
 from __future__ import annotations
@@ -33,25 +35,37 @@ class Config:
 
     embedding_model: str = field(
         default_factory=lambda: os.getenv(
-            "CODESAGE_EMBEDDING_MODEL", "sentence-transformers/all-MiniLM-L6-v2"
+            "CODESAGE_EMBEDDING_MODEL",
+            "sentence-transformers/all-MiniLM-L6-v2"
         )
     )
+
     ollama_host: str = field(
         default_factory=lambda: os.getenv(
-            "CODESAGE_OLLAMA_HOST", os.getenv("OLLAMA_HOST", "http://localhost:11434")
+            "CODESAGE_OLLAMA_HOST",
+            os.getenv("OLLAMA_HOST", "http://localhost:11434")
         )
     )
+
     ollama_model: str = field(
         default_factory=lambda: os.getenv(
-            "CODESAGE_OLLAMA_MODEL", os.getenv("OLLAMA_MODEL", "llama3.2:3b")
+            "CODESAGE_OLLAMA_MODEL",
+            os.getenv("OLLAMA_MODEL", "qwen2.5:3b")
         )
     )
+
     chroma_path: Path = field(
-        default_factory=lambda: _resolve_path(os.getenv("CODESAGE_CHROMA_PATH", "chroma_db"))
+        default_factory=lambda: _resolve_path(
+            os.getenv("CODESAGE_CHROMA_PATH", "chroma_db")
+        )
     )
+
     log_level: str = field(
-        default_factory=lambda: os.getenv("CODESAGE_LOG_LEVEL", "INFO").upper()
+        default_factory=lambda: os.getenv(
+            "CODESAGE_LOG_LEVEL", "INFO"
+        ).upper()
     )
+
     base_dir: Path = BASE_DIR
     uploads_dir: Path = BASE_DIR / "data" / "uploads"
     parsed_dir: Path = BASE_DIR / "data" / "parsed"
@@ -71,7 +85,7 @@ class Config:
 
 
 def get_config() -> Config:
-    """Return a fresh :class:`Config` reflecting the current environment."""
+    """Return a fresh Config reflecting the current environment."""
     return Config()
 
 
