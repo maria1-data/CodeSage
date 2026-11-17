@@ -8,6 +8,10 @@ Local configuration:
     CODESAGE_OLLAMA_HOST=http://localhost:11434
     CODESAGE_OLLAMA_MODEL=llama3.2:3b
 
+Optional Cloudflare proxy configuration:
+    CODESAGE_OLLAMA_HOST=https://your-tunnel.trycloudflare.com
+    CODESAGE_PROXY_TOKEN=your_proxy_token
+
 Optional Cloud configuration:
     CODESAGE_OLLAMA_USE_CLOUD=true
     OLLAMA_API_KEY=your_api_key
@@ -79,7 +83,7 @@ def is_enabled(value: str) -> bool:
 # --------------------------------------------------------------------------- #
 
 class LLM:
-    """Interface to local Ollama or explicitly enabled Ollama Cloud."""
+    """Interface to local Ollama, Cloudflare proxy, or Ollama Cloud."""
 
     def __init__(
         self,
@@ -91,14 +95,18 @@ class LLM:
 
         cfg = config or settings
 
-        # Read API key.
+        # Read authentication credentials.
         self.api_key = get_secret("OLLAMA_API_KEY")
+        self.proxy_token = get_secret("CODESAGE_PROXY_TOKEN")
 
         # Cloud is disabled by default.
         # An API key alone will NOT activate Cloud.
         use_cloud = is_enabled(
             get_secret("CODESAGE_OLLAMA_USE_CLOUD", "false")
         )
+
+        # Read custom Ollama host from environment or Streamlit Secrets.
+        secret_host = get_secret("CODESAGE_OLLAMA_HOST")
 
         # Determine Ollama host.
         if host is not None:
@@ -112,6 +120,9 @@ class LLM:
                 )
 
             self.host = OLLAMA_CLOUD_HOST
+
+        elif secret_host:
+            self.host = secret_host
 
         else:
             self.host = str(cfg.ollama_host)
@@ -148,6 +159,7 @@ class LLM:
 
         if self._client is None:
 
+            # Ollama Cloud authentication.
             if self.host == OLLAMA_CLOUD_HOST:
 
                 self._client = ollama.Client(
@@ -157,6 +169,17 @@ class LLM:
                     },
                 )
 
+            # Authenticated Cloudflare proxy.
+            elif self.proxy_token:
+
+                self._client = ollama.Client(
+                    host=self.host,
+                    headers={
+                        "Authorization": f"Bearer {self.proxy_token}"
+                    },
+                )
+
+            # Direct local Ollama connection.
             else:
 
                 self._client = ollama.Client(
